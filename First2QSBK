@@ -1,0 +1,73 @@
+# -*- coding:utf-8 -*-
+__author__='Banana'
+import urllib2
+import urllib
+import re
+import time 
+import cookielib
+
+class QSBK:
+	#初始化方法
+	def __init__(self):
+		self.pageIndex = 1
+		self.user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.221 Safari/537.36 SE 2.X MetaSr 1.0'
+		self.header = {'User-Agent':self.user_agent}
+		self.stories = []
+		self.enable = False
+	#获取页面
+	def getPage(self,pageIndex):
+		print '执行getPage'
+		try:
+			url = 'http://www.qiushibaike.com/hot/page/'+str(pageIndex)
+			request = urllib2.Request(url,headers=self.header)
+			response = urllib2.urlopen(request)
+			pageCode = response.read()
+			return pageCode
+		except urllib2.URLError,e:
+			if hasattr(e,"reason"):
+				print "链接异常,原因为:",e.reason
+				return None
+	#获取总页数
+	def getPageNumber(self,pageIndex):
+		print '获取总页数'
+		pageCode = self.getPage(pageIndex)
+		if not pageCode:
+			print '获取页面失败'
+		regex = r'<span class="page-numbers">(.*?)</span>'
+		pattern = re.compile(regex,re.S)
+		totalpage = int(re.findall(pattern,pageCode)[4])
+		return totalpage
+	
+	def getPageItems(self,pageIndex):
+		print '执行getPageItems'
+		pageCode = self.getPage(pageIndex)
+
+		if not pageCode:
+			print '页面加载失败...'
+			return None
+		regex1 = r'<div.*?author.*?<h2>(.*?)</h2>.*?class="content".*?<span>(.*?)</span>.*?class="stats".*?class="number">(\d*?)</i>.*?class="dash".*?class="number">(\d*?)</i>'	
+		pattern = re.compile(regex1,re.S)
+		items = re.findall(pattern,pageCode)
+		pageStories = []
+
+		for each in items:
+			t = ''
+			for i in each:
+				t+=(i+'\t')
+				x = t+'\n'
+			pageStories.append(x)
+		return pageStories
+
+	def start(self):
+		n = self.pageIndex
+		y = int(self.getPageNumber(self.pageIndex))
+		while n <= y:
+			x = self.getPageItems(n)
+			if x:
+				for i in x:
+					print i
+			n += 1
+			time.sleep(1)
+		
+spider = QSBK()
+spider.start()
